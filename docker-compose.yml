@@ -1,4 +1,16 @@
 services:
+  mysql:
+    image: mysql:8.0
+    container_name: gym-mysql
+    restart: unless-stopped
+    environment:
+      MYSQL_ROOT_PASSWORD: rootpassword
+      MYSQL_DATABASE: gym_track_prueba
+    ports:
+      - "3306:3306"
+    volumes:
+      - mysql_gym_data:/var/lib/mysql
+
   backend:
     build:
       context: ./backend
@@ -6,6 +18,15 @@ services:
     pull_policy: build
     container_name: gym-backend
     restart: unless-stopped
+    depends_on:
+      - mysql
+    environment:
+      SPRING_PROFILES_ACTIVE: mysql
+      SPRING_DATASOURCE_URL: jdbc:mysql://mysql:3306/gym_track_prueba?createDatabaseIfNotExist=true&useSSL=false&serverTimezone=UTC&allowPublicKeyRetrieval=true
+      SPRING_DATASOURCE_USERNAME: root
+      SPRING_DATASOURCE_PASSWORD: rootpassword
+    ports:
+      - "8080:8080"
 
   frontend:
     build:
@@ -15,7 +36,7 @@ services:
     container_name: gym-frontend
     restart: unless-stopped
     ports:
-    - "3002:80"
+      - "3002:80"
 
   cloudflared:
     image: cloudflare/cloudflared:latest
@@ -25,3 +46,6 @@ services:
       - backend
       - frontend
     restart: unless-stopped
+
+volumes:
+  mysql_gym_data:
